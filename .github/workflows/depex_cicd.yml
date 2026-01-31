@@ -37,8 +37,8 @@ jobs:
       - name: Make request to external service
         env:
           LOGIN_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/auth/login
-          LOGIN_EMAIL: ${{ secrets.LOGIN_EMAIL }}
-          LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
+          LOGIN_EMAIL: ${{ secrets.DEPEX_EMAIL }}
+          LOGIN_PASSWORD: ${{ secrets.DEPEX_PASSWORD }}
         run: |
           RESPONSE=$(curl -sS -X POST "$LOGIN_URL" \
             -H "Content-Type: application/json" \
