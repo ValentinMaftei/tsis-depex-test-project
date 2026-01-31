@@ -54,6 +54,4 @@ jobs:
             exit 1
           fi
 
-          echo "::add-mask::$TOKEN"
-
           echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
