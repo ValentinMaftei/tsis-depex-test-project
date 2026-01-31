@@ -100,14 +100,6 @@ jobs:
           echo "| :--- | :--- | :--- | :--- |" >> api_report.md
           echo "| **Login Endpoint** | $status_icon **$status_msg** | \`$http_code\` | $(date +'%H:%M:%S') |" >> api_report.md
           echo "" >> api_report.md
-          
-          echo "<details>" >> api_report.md
-          echo "<summary>🔍 Vezi răspunsul serverului (JSON)</summary>" >> api_report.md
-          echo "" >> api_report.md
-          echo "\`\`\`json" >> api_report.md
-          echo "$body" >> api_report.md
-          echo "\`\`\`" >> api_report.md
-          echo "</details>" >> api_report.md
 
       - name: Post API Comment
         uses: marocchino/sticky-pull-request-comment@v2
