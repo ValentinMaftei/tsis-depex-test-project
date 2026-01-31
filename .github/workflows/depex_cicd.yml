@@ -110,7 +110,6 @@ jobs:
           echo "| Check | Status | HTTP Code | Time |" >> api_report.md
           echo "| :--- | :--- | :--- | :--- |" >> api_report.md
           echo "| **Login Endpoint** | $status_icon **$status_msg** | \`$http_code\` | $(date +'%H:%M:%S') |" >> api_report.md
-          echo "" >> api_report.md
 
       - name: Init Graph Repository
         id: graph_step
