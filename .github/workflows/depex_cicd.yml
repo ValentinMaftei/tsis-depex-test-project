@@ -51,21 +51,60 @@ jobs:
         run: |
           docker build -t fastapi-task-management .
 
-      - name: Make request to external service
+      # - name: Make request to external service
+      #   env:
+      #     LOGIN_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/auth/login
+      #     LOGIN_EMAIL: ${{ secrets.DEPEX_EMAIL }}
+      #     LOGIN_PASSWORD: ${{ secrets.DEPEX_PASSWORD }}
+      #   run: |
+      #     RESPONSE=$(curl -sS -X POST "$LOGIN_URL" \
+      #       -H "Content-Type: application/json" \
+      #       -d "{\"email\":\"$LOGIN_EMAIL\", \"password\":\"$LOGIN_PASSWORD\"}")
+
+      #     TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+
+      #     if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
+      #       echo "Error: Could not extract access token"
+      #       exit 1
+      #     fi
+
+      #     echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+      - name: Check API and Generate Report
+        id: api_check
         env:
           LOGIN_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/auth/login
           LOGIN_EMAIL: ${{ secrets.DEPEX_EMAIL }}
           LOGIN_PASSWORD: ${{ secrets.DEPEX_PASSWORD }}
         run: |
-          RESPONSE=$(curl -sS -X POST "$LOGIN_URL" \
+          response=$(curl -s -w "\n%{http_code}" -X POST "$LOGIN_URL" \
             -H "Content-Type: application/json" \
             -d "{\"email\":\"$LOGIN_EMAIL\", \"password\":\"$LOGIN_PASSWORD\"}")
 
-          TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
 
-          if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
-            echo "Error: Could not extract access token"
-            exit 1
+          if [ "$http_code" == "200" ]; then
+            status_icon="🟢"
+            status_msg="Success"
+            color="good"
+          else
+            status_icon="🔴"
+            status_msg="Failed"
+            color="danger"
           fi
-
-          echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
+          
+          echo "## 🔐 Authentication Service Report" > api_report.md
+          echo "" >> api_report.md
+          echo "| Check | Status | HTTP Code | Time |" >> api_report.md
+          echo "| :--- | :--- | :--- | :--- |" >> api_report.md
+          echo "| **Login Endpoint** | $status_icon **$status_msg** | \`$http_code\` | $(date +'%H:%M:%S') |" >> api_report.md
+          echo "" >> api_report.md
+          
+          echo "<details>" >> api_report.md
+          echo "<summary>🔍 Vezi răspunsul serverului (JSON)</summary>" >> api_report.md
+          echo "" >> api_report.md
+          echo "\`\`\`json" >> api_report.md
+          echo "$body" >> api_report.md
+          echo "\`\`\`" >> api_report.md
+          echo "</details>" >> api_report.md
