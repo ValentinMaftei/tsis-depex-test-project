@@ -84,8 +84,8 @@ jobs:
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
 
-          TOKEN=$(echo "$response" | jq -r '.access_token')
-          USER_ID=$(echo "$response" | jq -r '.user_id')
+          TOKEN=$(echo "$body" | jq -r '.access_token')
+          USER_ID=$(echo "$body" | jq -r '.user_id')
 
           if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
             echo "Error: Could not extract access token"
@@ -94,7 +94,7 @@ jobs:
 
           echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
           echo "USER_ID=$USER_ID" >> $GITHUB_ENV
-          
+
           if [ "$http_code" == "200" ]; then
             status_icon="🟢"
             status_msg="Success"
