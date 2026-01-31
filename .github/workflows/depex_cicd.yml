@@ -44,3 +44,16 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"email\":\"$LOGIN_EMAIL\", \"password\":\"$LOGIN_PASSWORD\"}")
           echo "Response: $RESPONSE"
+
+          TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+
+          echo "Token: $TOKEN"
+
+          if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
+            echo "Error: Could not extract access token"
+            exit 1
+          fi
+
+          echo "::add-mask::$TOKEN"
+
+          echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
