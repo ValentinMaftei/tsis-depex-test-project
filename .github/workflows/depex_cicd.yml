@@ -81,6 +81,16 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"email\":\"$LOGIN_EMAIL\", \"password\":\"$LOGIN_PASSWORD\"}")
 
+          TOKEN=$(echo "$response" | jq -r '.access_token')
+          USER_ID=$(echo "$response" | jq -r '.user_id')
+
+          if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
+            echo "Error: Could not extract access token"
+            exit 1
+          fi
+
+          echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
+
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
 
@@ -99,6 +109,36 @@ jobs:
           echo "| Check | Status | HTTP Code | Time |" >> api_report.md
           echo "| :--- | :--- | :--- | :--- |" >> api_report.md
           echo "| **Login Endpoint** | $status_icon **$status_msg** | \`$http_code\` | $(date +'%H:%M:%S') |" >> api_report.md
+          echo "" >> api_report.md
+
+      - name: Init Graph Repository
+        id: graph_step
+        if: env.ACCESS_TOKEN != '' 
+        env:
+          GRAPH_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/graph/init
+          REPO_OWNER: ${{ secrets.REPOSITORY_OWNER }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          GRAPH_BODY="{\"owner\":\"$REPO_OWNER\", \"name\":\"$REPO_NAME\", \"user_id\":\"$USER_ID\"}"
+
+          response=$(curl -s -w "\n%{http_code}" -X POST "$GRAPH_URL" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -d "$GRAPH_BODY")
+
+          code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
+
+          if [ "$code" == "200" ] || [ "$code" == "201" ]; then
+             icon="🟢"
+             msg="Initialized"
+          else
+             icon="🔴"
+             msg="Error"
+          fi
+
+          echo "| **2. Graph Init** | $icon **$msg** | \`$code\` | Repo: \`$REPO_NAME\` |" >> api_report.md
+
           echo "" >> api_report.md
 
       - name: Post API Comment
