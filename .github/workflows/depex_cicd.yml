@@ -108,3 +108,9 @@ jobs:
           echo "$body" >> api_report.md
           echo "\`\`\`" >> api_report.md
           echo "</details>" >> api_report.md
+
+      - name: Post API Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: api-check-report 
+          path: api_report.md
