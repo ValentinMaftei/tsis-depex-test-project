@@ -83,7 +83,6 @@ jobs:
 
           echo "Full response: $response"
 
-
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
           
@@ -101,38 +100,70 @@ jobs:
           echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
           echo "USER_ID=$USER_ID" >> $GITHUB_ENV
 
-      - name: Init Graph Repository
-        id: graph_step
-        if: env.ACCESS_TOKEN != '' 
-        env:
-          GRAPH_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/graph/repository/init
-          REPO_OWNER: ${{ secrets.REPOSITORY_OWNER }}
-          REPO_NAME: ${{ github.event.repository.name }}
-        run: |
-          GRAPH_BODY="{\"owner\":\"$REPO_OWNER\", \"name\":\"$REPO_NAME\", \"user_id\":\"$USER_ID\"}"
+      # - name: Init Graph Repository
+      #   id: graph_step
+      #    
+      #   env:
+      #     GRAPH_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/graph/repository/init
+      #     REPO_OWNER: ${{ secrets.REPOSITORY_OWNER }}
+      #     REPO_NAME: ${{ github.event.repository.name }}
+      #   run: |
+      #     GRAPH_BODY="{\"owner\":\"$REPO_OWNER\", \"name\":\"$REPO_NAME\", \"user_id\":\"$USER_ID\"}"
 
-          response=$(curl -s -w "\n%{http_code}" -X POST "$GRAPH_URL" \
+      #     response=$(curl -s -w "\n%{http_code}" -X POST "$GRAPH_URL" \
+      #       -H "Content-Type: application/json" \
+      #       -H "Authorization: Bearer $ACCESS_TOKEN" \
+      #       -d "$GRAPH_BODY")
+
+      #     code=$(echo "$response" | tail -n1)
+      #     body=$(echo "$response" | head -n -1)
+
+      #     if [ "$code" == "200" ] || [ "$code" == "201" ]; then
+      #        icon="🟢"
+      #        msg="Initialized"
+      #     else
+      #        icon="🔴"
+      #        msg="Error"
+      #     fi
+
+      #     echo "## Endpoints Report" > api_report.md
+      #     echo "" >> api_report.md
+      #     echo "| Check | Status | HTTP Code | Time |" >> api_report.md
+      #     echo "| :--- | :--- | :--- | :--- |" >> api_report.md
+      #     echo "| **1. Graph Init** | $icon **$msg** | \`$code\` | Repo: \`$REPO_NAME\` |" >> api_report.md
+      #     echo "" >> api_report.md
+
+      - name: Check file validity
+        id: file_check
+        if: env.ACCESS_TOKEN != ''
+        env:
+          FILE_CHECK_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/valid_file
+        run: |
+          FILE_CHECK_BODY="{\"requirement_file_id\":\"4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527\", \"max_level\":2, \"node_type\":\"PyPIPackage\"}"
+
+          response=$(curl -s -w "\n%{http_code}" -X POST "$FILE_CHECK_URL" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $ACCESS_TOKEN" \
-            -d "$GRAPH_BODY")
+            -d "$FILE_CHECK_BODY")
 
           code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
 
           if [ "$code" == "200" ] || [ "$code" == "201" ]; then
              icon="🟢"
-             msg="Initialized"
+             msg="Valid File"
           else
              icon="🔴"
              msg="Error"
           fi
 
-          echo "## Endpoints Report" > api_report.md
+          echo "## Validity" > api_report.md
           echo "" >> api_report.md
-          echo "| Check | Status | HTTP Code | Time |" >> api_report.md
-          echo "| :--- | :--- | :--- | :--- |" >> api_report.md
-          echo "| **1. Graph Init** | $icon **$msg** | \`$code\` | Repo: \`$REPO_NAME\` |" >> api_report.md
+          echo "| Check | Status | HTTP Code |" >> api_report.md
+          echo "| :--- | :--- | :--- |" >> api_report.md
+          echo "| **1. File Validity** | $icon **$msg** | \`$code\` |" >> api_report.md
           echo "" >> api_report.md
+          
 
       - name: Post API Comment
         uses: marocchino/sticky-pull-request-comment@v2
