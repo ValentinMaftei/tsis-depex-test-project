@@ -191,7 +191,6 @@ jobs:
 
           : > requirements.depex.new
           while IFS= read -r line; do
-            # Păstrează comentarii și linii goale
             if [[ "$line" =~ ^[[:space:]]*$ ]] || [[ "$line" =~ ^[[:space:]]*# ]]; then
               echo "$line" >> requirements.depex.new
               continue
@@ -225,7 +224,6 @@ jobs:
         with:
           commit-message: apply Depex suggested versions
           title: "chore(deps): Depex suggested versions (patch)"
-          body-file: depex_pr_body.md
           branch: depex/patch-deps-update
           labels: dependencies,depex,patch
           add-paths: |
