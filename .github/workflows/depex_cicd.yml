@@ -162,7 +162,6 @@ jobs:
           echo "| Check | Status | HTTP Code |" >> api_report.md
           echo "| :--- | :--- | :--- |" >> api_report.md
           echo "| **1. File Validity** | $icon **$msg** | \`$code\` |" >> api_report.md
-          echo "" >> api_report.md
           
       - name: Minimize Impact Report
         if: env.ACCESS_TOKEN != ''
@@ -178,6 +177,8 @@ jobs:
 
           code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
+
+          echo "Impact Response Body: $body"
 
           if [ "$code" == "200" ] || [ "$code" == "201" ]; then
              icon="🟢"
