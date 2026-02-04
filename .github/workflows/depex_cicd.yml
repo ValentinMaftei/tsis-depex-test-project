@@ -100,39 +100,6 @@ jobs:
           echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
           echo "USER_ID=$USER_ID" >> $GITHUB_ENV
 
-      # - name: Init Graph Repository
-      #   id: graph_step
-      #    
-      #   env:
-      #     GRAPH_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/graph/repository/init
-      #     REPO_OWNER: ${{ secrets.REPOSITORY_OWNER }}
-      #     REPO_NAME: ${{ github.event.repository.name }}
-      #   run: |
-      #     GRAPH_BODY="{\"owner\":\"$REPO_OWNER\", \"name\":\"$REPO_NAME\", \"user_id\":\"$USER_ID\"}"
-
-      #     response=$(curl -s -w "\n%{http_code}" -X POST "$GRAPH_URL" \
-      #       -H "Content-Type: application/json" \
-      #       -H "Authorization: Bearer $ACCESS_TOKEN" \
-      #       -d "$GRAPH_BODY")
-
-      #     code=$(echo "$response" | tail -n1)
-      #     body=$(echo "$response" | head -n -1)
-
-      #     if [ "$code" == "200" ] || [ "$code" == "201" ]; then
-      #        icon="🟢"
-      #        msg="Initialized"
-      #     else
-      #        icon="🔴"
-      #        msg="Error"
-      #     fi
-
-      #     echo "## Endpoints Report" > api_report.md
-      #     echo "" >> api_report.md
-      #     echo "| Check | Status | HTTP Code | Time |" >> api_report.md
-      #     echo "| :--- | :--- | :--- | :--- |" >> api_report.md
-      #     echo "| **1. Graph Init** | $icon **$msg** | \`$code\` | Repo: \`$REPO_NAME\` |" >> api_report.md
-      #     echo "" >> api_report.md
-
       - name: Check file validity
         id: file_check
         if: env.ACCESS_TOKEN != ''
@@ -179,6 +146,7 @@ jobs:
           body=$(echo "$response" | head -n -1)
 
           echo "Impact Response Body: $body"
+          echo "$body" > impact_body.json
 
           if [ "$code" == "200" ] || [ "$code" == "201" ]; then
              icon="🟢"
@@ -190,6 +158,27 @@ jobs:
 
           echo "| **2. Minimize Impact** | $icon **$msg** | \`$code\` |" >> api_report.md
           echo "" >> api_report.md
+
+      - name: Build dependency update comment
+        if: env.ACCESS_TOKEN != ''
+        run: |
+          if [ ! -f impact_body.json ]; then
+            echo "No impact_body.json to parse"; exit 0
+          fi
+
+          jq '.result[0]' impact_body.json > impact_obj.json
+
+          echo "## Suggested Dependency Updates" >> api_report.md
+          echo "" >> api_report.md
+
+          awk -F'==' 'NF==2 {print tolower($1) "=" $2}' requirements.txt > req_map.txt
+
+          while IFS='=' read -r name req_ver; do
+            imp_ver=$(jq -r --arg k "$name" '.[$k] // empty' impact_obj.json)
+            if [ -n "$imp_ver" ]; then
+              echo "- For library $name: from version $req_ver (requirements.txt) to version $imp_ver (Depex response)" >> api_report.md
+            fi
+          done < req_map.txt
 
       - name: Post API Comment
         uses: marocchino/sticky-pull-request-comment@v2
