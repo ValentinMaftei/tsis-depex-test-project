@@ -1,6 +1,6 @@
-fastapi==0.104.1
-uvicorn==0.24.0
+fastapi==0.109.2
+uvicorn==0.33.0
 pydantic==2.12.5
-pytest==7.4.3
-pytest-cov==4.1.0
-httpx==0.25.2
+pytest==7.0.0rc1
+pytest-cov==1.2
+httpx==0.28.0
