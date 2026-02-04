@@ -213,6 +213,8 @@ jobs:
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
+
+            cp requirements.depex.new requirements.txt
           fi
 
       - name: Create patch PR with updated requirements
