@@ -190,8 +190,6 @@ jobs:
           fi
           jq '.result[0]' impact_body.json > impact_obj.json
 
-          cp requirements.txt requirements.depex.new
-
           : > requirements.depex.new
           while IFS= read -r line; do
             if [[ "$line" =~ ^[[:space:]]*$ ]] || [[ "$line" =~ ^[[:space:]]*# ]]; then
