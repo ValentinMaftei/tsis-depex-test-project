@@ -197,10 +197,21 @@ jobs:
               orig_name="${BASH_REMATCH[1]}"
               req_ver="${BASH_REMATCH[2]}"
               name_lower=$(echo "$orig_name" | tr '[:upper:]' '[:lower:]')
+             
               imp_ver=$(jq -r --arg k "$name_lower" '.[$k] // empty' impact_obj.json)
 
-              new_ver="${imp_ver:-$req_ver}"
-              echo "${orig_name}==${new_ver}" >> requirements.depex.new
+              final_ver="$req_ver"
+
+              if [ -n "$imp_ver" ]; then
+                max_ver=$(printf "%s\n%s" "$req_ver" "$imp_ver" | sort -V | tail -n 1)
+                
+                if [ "$max_ver" == "$imp_ver" ] && [ "$imp_ver" != "$req_ver" ]; then
+                   final_ver="$imp_ver"
+                   echo "Upgrading $orig_name: $req_ver -> $final_ver"
+                fi
+              fi
+             
+              echo "${orig_name}==${final_ver}" >> requirements.depex.new
             else
               echo "$line" >> requirements.depex.new
             fi
