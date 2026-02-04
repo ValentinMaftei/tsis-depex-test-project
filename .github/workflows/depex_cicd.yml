@@ -95,27 +95,11 @@ jobs:
           echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
           echo "USER_ID=$USER_ID" >> $GITHUB_ENV
 
-          if [ "$http_code" == "200" ]; then
-            status_icon="🟢"
-            status_msg="Success"
-            color="good"
-          else
-            status_icon="🔴"
-            status_msg="Failed"
-            color="danger"
-          fi
-          
-          echo "## 🔐 Authentication Service Report" > api_report.md
-          echo "" >> api_report.md
-          echo "| Check | Status | HTTP Code | Time |" >> api_report.md
-          echo "| :--- | :--- | :--- | :--- |" >> api_report.md
-          echo "| **Login Endpoint** | $status_icon **$status_msg** | \`$http_code\` | $(date +'%H:%M:%S') |" >> api_report.md
-
       - name: Init Graph Repository
         id: graph_step
         if: env.ACCESS_TOKEN != '' 
         env:
-          GRAPH_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/graph/init
+          GRAPH_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/graph/repository/init
           REPO_OWNER: ${{ secrets.REPOSITORY_OWNER }}
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
@@ -137,8 +121,11 @@ jobs:
              msg="Error"
           fi
 
-          echo "| **2. Graph Init** | $icon **$msg** | \`$code\` | Repo: \`$REPO_NAME\` |" >> api_report.md
-
+          echo "## Endpoints Report" > api_report.md
+          echo "" >> api_report.md
+          echo "| Check | Status | HTTP Code | Time |" >> api_report.md
+          echo "| :--- | :--- | :--- | :--- |" >> api_report.md
+          echo "| **1. Graph Init** | $icon **$msg** | \`$code\` | Repo: \`$REPO_NAME\` |" >> api_report.md
           echo "" >> api_report.md
 
       - name: Post API Comment
