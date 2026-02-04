@@ -188,17 +188,27 @@ jobs:
           jq '.result[0]' impact_body.json > impact_obj.json
 
           cp requirements.txt requirements.depex.new
-          sed -i 's/\r$//' requirements.depex.new
 
-          # Update only lines of the form name==version
-          awk -F'==' 'NF==2 {print $0}' requirements.txt | \
-          while IFS='==' read -r orig_name req_ver; do
-            name_lower=$(echo "$orig_name" | tr '[:upper:]' '[:lower:]')
-            imp_ver=$(jq -r --arg k "$name_lower" '.[$k] // empty' impact_obj.json)
-            if [ -n "$imp_ver" ] && [ "$imp_ver" != "$req_ver" ]; then
-              sed -i "s/^${orig_name}==${req_ver}\$/${orig_name}==${imp_ver}/" requirements.depex.new
+          : > requirements.depex.new
+          while IFS= read -r line; do
+            # Păstrează comentarii și linii goale
+            if [[ "$line" =~ ^[[:space:]]*$ ]] || [[ "$line" =~ ^[[:space:]]*# ]]; then
+              echo "$line" >> requirements.depex.new
+              continue
             fi
-          done
+
+            if [[ "$line" =~ ^([^=[:space:]]+)==([^\r[:space:]]+)$ ]]; then
+              orig_name="${BASH_REMATCH[1]}"
+              req_ver="${BASH_REMATCH[2]}"
+              name_lower=$(echo "$orig_name" | tr '[:upper:]' '[:lower:]')
+              imp_ver=$(jq -r --arg k "$name_lower" '.[$k] // empty' impact_obj.json)
+
+              new_ver="${imp_ver:-$req_ver}"
+              echo "${orig_name}==${new_ver}" >> requirements.depex.new
+            else
+              echo "$line" >> requirements.depex.new
+            fi
+          done < requirements.txt
 
           echo "Generated requirements.depex.new:"
           cat requirements.depex.new
@@ -207,18 +217,6 @@ jobs:
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            # Build a short summary body for the PR
-            echo "### Suggested Dependency Updates (Depex)" > depex_pr_body.md
-            echo "" >> depex_pr_body.md
-            echo "| Library | Current | Suggested |" >> depex_pr_body.md
-            echo "| :-- | :-- | :-- |" >> depex_pr_body.md
-            awk -F'==' 'NF==2 {print tolower($1) "=" $2}' requirements.txt > req_map.txt
-            while IFS='=' read -r name req_ver; do
-              imp_ver=$(jq -r --arg k "$name" '.[$k] // empty' impact_obj.json)
-              if [ -n "$imp_ver" ] && [ "$imp_ver" != "$req_ver" ]; then
-                echo "| **$name** | \`$req_ver\` | **\`$imp_ver\`** |" >> depex_pr_body.md
-              fi
-            done < req_map.txt
           fi
 
       - name: Create patch PR with updated requirements
