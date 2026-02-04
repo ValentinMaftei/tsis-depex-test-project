@@ -204,7 +204,7 @@ jobs:
             else
               echo "$line" >> requirements.depex.new
             fi
-          done < requirements.txt
+          done < requirements.txt 
 
           echo "Generated requirements.depex.new:"
           cat requirements.depex.new
@@ -250,22 +250,6 @@ jobs:
             -H "Authorization: token $GH_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"title\":\"chore(deps): Depex suggested versions\",\"head\":\"depex/deps-update-${{ github.run_id }}\",\"base\":\"${{ github.event.pull_request.base.ref }}\",\"body\":\"This PR contains dependency updates suggested by Depex to minimize security impact.\",\"labels\":[\"dependencies\",\"depex\"]}"
-
-      # - name: Create patch PR with updated requirements
-      #   if: steps.depex_patch.outputs.has_changes == 'true'
-      #   uses: peter-evans/create-pull-request@v5
-      #   with:
-      #     commit-message: apply Depex suggested versions
-      #     title: "chore(deps): Depex suggested versions (patch)"
-      #     branch: depex/patch-deps-update-${{ github.run_id }}
-      #     base: ${{ github.event.pull_request.base.ref }}
-      #     labels: dependencies,depex,patch
-      #     token: ${{ github.token }}
-
-      # - name: Move updated requirements into place (for PR branch)
-      #   if: steps.depex_patch.outputs.has_changes == 'true'
-      #   run: |
-      #     mv requirements.depex.new requirements.txt
 
       - name: Post API Comment
         uses: marocchino/sticky-pull-request-comment@v2
