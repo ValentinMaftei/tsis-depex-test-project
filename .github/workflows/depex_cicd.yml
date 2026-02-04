@@ -52,7 +52,10 @@ jobs:
     if: ${{ github.event_name == 'pull_request' && !startsWith(github.event.pull_request.head.ref, 'depex/') && github.actor != 'github-actions[bot]' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.ref }}
 
       - name: Build Docker image
         run: |
@@ -225,6 +228,7 @@ jobs:
           commit-message: apply Depex suggested versions
           title: "chore(deps): Depex suggested versions (patch)"
           branch: depex/patch-deps-update
+          base: ${{ github.event.pull_request.base.ref }}
           labels: dependencies,depex,patch
           add-paths: |
             requirements.txt
