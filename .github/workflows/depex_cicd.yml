@@ -236,13 +236,10 @@ jobs:
           
           git push origin depex/deps-update-${{ github.run_id }}
 
-          gh pr create \
-            --title "chore(deps): Depex suggested versions" \
-            --body "This PR includes dependency updates suggested by Depex to minimize security impact." \
-            --base ${{ github.event.pull_request.base.ref }} \
-            --head depex/deps-update-${{ github.run_id }} \
-            --label "dependencies" \
-            --label "depex"
+          curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"title\":\"chore(deps): Depex suggested versions\",\"head\":\"depex/deps-update-${{ github.run_id }}\",\"base\":\"${{ github.event.pull_request.base.ref }}\",\"body\":\"This PR contains dependency updates suggested by Depex to minimize security impact.\",\"labels\":[\"dependencies\",\"depex\"]}"
 
       # - name: Create patch PR with updated requirements
       #   if: steps.depex_patch.outputs.has_changes == 'true'
