@@ -188,6 +188,7 @@ jobs:
           jq '.result[0]' impact_body.json > impact_obj.json
 
           cp requirements.txt requirements.depex.new
+          sed -i 's/\r$//' requirements.depex.new
 
           # Update only lines of the form name==version
           awk -F'==' 'NF==2 {print $0}' requirements.txt | \
