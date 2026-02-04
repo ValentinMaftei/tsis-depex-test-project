@@ -227,7 +227,8 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-        
+          repositories: tsis-depex-test-project
+
 
       - name: Create Depex PR with updated requirements
         if: steps.depex_patch.outputs.has_changes == 'true'
