@@ -55,7 +55,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Check API and Generate Report
         id: api_check
@@ -223,11 +223,9 @@ jobs:
         with:
           commit-message: apply Depex suggested versions
           title: "chore(deps): Depex suggested versions (patch)"
-          branch: depex/patch-deps-update
+          branch: depex/patch-deps-update-${{ github.run_id }}
           base: ${{ github.event.pull_request.base.ref }}
           labels: dependencies,depex,patch
-          add-paths: |
-            requirements.txt
           token: ${{ github.token }}
 
       - name: Move updated requirements into place (for PR branch)
