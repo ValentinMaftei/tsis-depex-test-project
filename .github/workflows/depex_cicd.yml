@@ -180,10 +180,10 @@ jobs:
             if [ -n "$imp_ver" ]; then
               if [ "$imp_ver" != "$req_ver" ]; then
                 lib="**$name**"
-                sug="**$imp_ver**"
+                sug="**\`$imp_ver\`**"
               else
                 lib="$name"
-                sug="$imp_ver"
+                sug="\`$imp_ver\`"
               fi
               echo "| $lib | \`$req_ver\` | $sug |" >> api_report.md
             fi
