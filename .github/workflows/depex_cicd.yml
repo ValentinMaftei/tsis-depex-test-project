@@ -228,13 +228,19 @@ jobs:
 
           git checkout -b depex/deps-update-${{ github.run_id }}
 
-          git stash
+          git add requirements.txt
 
           git commit -m "chore(deps): Depex suggested versions"
           
           git push origin depex/deps-update-${{ github.run_id }}
 
-          gh pr create --title "chore(deps): Depex suggested versions" --body "This PR includes dependency updates suggested by Depex to minimize security impact." --base ${{ github.event.pull_request.base.ref }} --head depex/deps-update-${{ github.run_id }} --label "dependencies,depex"
+          gh pr create \
+            --title "chore(deps): Depex suggested versions" \
+            --body "This PR includes dependency updates suggested by Depex to minimize security impact." \
+            --base ${{ github.event.pull_request.base.ref }} \
+            --head depex/deps-update-${{ github.run_id }} \
+            --label "dependencies" \
+            --label "depex"
 
       # - name: Create patch PR with updated requirements
       #   if: steps.depex_patch.outputs.has_changes == 'true'
