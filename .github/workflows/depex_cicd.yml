@@ -199,6 +199,9 @@ jobs:
             fi
           done
 
+          echo "Generated requirements.depex.new:"
+          cat requirements.depex.new
+
           if cmp -s requirements.txt requirements.depex.new; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
