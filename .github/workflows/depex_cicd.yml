@@ -222,6 +222,8 @@ jobs:
 
       - name: Create Depex PR with updated requirements
         if: steps.depex_patch.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
