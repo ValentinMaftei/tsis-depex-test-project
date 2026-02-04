@@ -81,8 +81,14 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"email\":\"$LOGIN_EMAIL\", \"password\":\"$LOGIN_PASSWORD\"}")
 
+          echo "Full response: $response"
+
+
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
+          
+          echo "HTTP Code: $http_code"
+          echo "Response Body: $body"
 
           TOKEN=$(echo "$body" | jq -r '.access_token')
           USER_ID=$(echo "$body" | jq -r '.user_id')
