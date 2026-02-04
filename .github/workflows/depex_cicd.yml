@@ -215,23 +215,41 @@ jobs:
             echo "has_changes=true" >> $GITHUB_OUTPUT
 
             cp requirements.depex.new requirements.txt
+
+            git add requirements.txt
+            git stash
+
           fi
 
-      - name: Create patch PR with updated requirements
-        if: steps.depex_patch.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          commit-message: apply Depex suggested versions
-          title: "chore(deps): Depex suggested versions (patch)"
-          branch: depex/patch-deps-update-${{ github.run_id }}
-          base: ${{ github.event.pull_request.base.ref }}
-          labels: dependencies,depex,patch
-          token: ${{ github.token }}
-
-      - name: Move updated requirements into place (for PR branch)
+      - name: Create Depex PR with updated requirements
         if: steps.depex_patch.outputs.has_changes == 'true'
         run: |
-          mv requirements.depex.new requirements.txt
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b depex/deps-update-${{ github.run_id }}
+
+          git commit -m "chore(deps): Depex suggested versions"
+          
+          git push origin depex/deps-update-${{ github.run_id }}
+
+          gh pr create --title "chore(deps): Depex suggested versions" --body "This PR includes dependency updates suggested by Depex to minimize security impact." --base ${{ github.event.pull_request.base.ref }} --head depex/deps-update-${{ github.run_id }} --label "dependencies,depex"
+
+      # - name: Create patch PR with updated requirements
+      #   if: steps.depex_patch.outputs.has_changes == 'true'
+      #   uses: peter-evans/create-pull-request@v5
+      #   with:
+      #     commit-message: apply Depex suggested versions
+      #     title: "chore(deps): Depex suggested versions (patch)"
+      #     branch: depex/patch-deps-update-${{ github.run_id }}
+      #     base: ${{ github.event.pull_request.base.ref }}
+      #     labels: dependencies,depex,patch
+      #     token: ${{ github.token }}
+
+      # - name: Move updated requirements into place (for PR branch)
+      #   if: steps.depex_patch.outputs.has_changes == 'true'
+      #   run: |
+      #     mv requirements.depex.new requirements.txt
 
       - name: Post API Comment
         uses: marocchino/sticky-pull-request-comment@v2
