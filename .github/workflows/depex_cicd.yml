@@ -217,7 +217,6 @@ jobs:
             cp requirements.depex.new requirements.txt
 
             git add requirements.txt
-            git stash
 
           fi
 
@@ -228,6 +227,8 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           git checkout -b depex/deps-update-${{ github.run_id }}
+
+          git stash
 
           git commit -m "chore(deps): Depex suggested versions"
           
