@@ -1,0 +1,23 @@
+{
+  "fastapi": "0.109.2",
+  "requests": "2.31.0",
+  "django": "3.2.24",
+  "pytest-cov": "1.2",
+  "httpx": "0.28.0",
+  "pytest": "6.2.5",
+  "urllib3": "1.26.17",
+  "pyyaml": "5.4.1",
+  "uvicorn": "0.29.0",
+  "file_risk_/requirements.txt": 1.52,
+  "pydantic": "2.12.5",
+  "impact_pyyaml": 0.0,
+  "impact_django": 2.3,
+  "impact_httpx": 0.0,
+  "impact_urllib3": 1.17,
+  "impact_pytest": 0.0,
+  "impact_requests": 1.1,
+  "impact_uvicorn": 0.0,
+  "impact_fastapi": 0.0,
+  "impact_pydantic": 0.0,
+  "impact_pytest-cov": 0.0
+}
