@@ -170,13 +170,22 @@ jobs:
 
           echo "## Suggested Dependency Updates" >> api_report.md
           echo "" >> api_report.md
+          echo "| Library | Current (requirements.txt) | Suggested (Depex) |" >> api_report.md
+          echo "| :-- | :-- | :-- |" >> api_report.md
 
           awk -F'==' 'NF==2 {print tolower($1) "=" $2}' requirements.txt > req_map.txt
 
           while IFS='=' read -r name req_ver; do
             imp_ver=$(jq -r --arg k "$name" '.[$k] // empty' impact_obj.json)
             if [ -n "$imp_ver" ]; then
-              echo "- For library $name: from version $req_ver (requirements.txt) to version $imp_ver (Depex response)" >> api_report.md
+              if [ "$imp_ver" != "$req_ver" ]; then
+                lib="**$name**"
+                sug="**$imp_ver**"
+              else
+                lib="$name"
+                sug="$imp_ver"
+              fi
+              echo "| $lib | \`$req_ver\` | $sug |" >> api_report.md
             fi
           done < req_map.txt
 
