@@ -220,10 +220,19 @@ jobs:
 
           fi
 
+      - name: Create token
+        id: gha_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app_id: ${{ secrets.GITHUB_APP_ID }}
+          private_key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+        
+
       - name: Create Depex PR with updated requirements
         if: steps.depex_patch.outputs.has_changes == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.gha_token.outputs.token }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
