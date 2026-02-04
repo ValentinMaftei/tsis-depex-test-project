@@ -164,6 +164,31 @@ jobs:
           echo "| **1. File Validity** | $icon **$msg** | \`$code\` |" >> api_report.md
           echo "" >> api_report.md
           
+      - name: Minimize Impact Report
+        if: env.ACCESS_TOKEN != ''
+        env:
+          IMPACT_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/minimize_impact
+        run: |
+          IMPACT_BODY="{\"requirement_file_id\":\"4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527\", \"limit\":1, \"max_level\":2, \"node_type\":\"PyPIPackage\", \"agregator\":\"mean\"}"
+
+          response=$(curl -s -w "\n%{http_code}" -X POST "$IMPACT_URL" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -d "$IMPACT_BODY")
+
+          code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
+
+          if [ "$code" == "200" ] || [ "$code" == "201" ]; then
+             icon="🟢"
+             msg="Impact Analyzed"
+          else
+             icon="🔴"
+             msg="Error"
+          fi
+
+          echo "| **2. Minimize Impact** | $icon **$msg** | \`$code\` |" >> api_report.md
+          echo "" >> api_report.md
 
       - name: Post API Comment
         uses: marocchino/sticky-pull-request-comment@v2
