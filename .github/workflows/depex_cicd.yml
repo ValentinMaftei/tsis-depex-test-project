@@ -169,6 +169,7 @@ jobs:
           jq '.result[0]' impact_body.json > impact_obj.json
 
           echo "## Suggested Dependency Updates" >> api_report.md
+          echo "The following table lists the current dependencies from \`requirements.txt\` alongside the suggested versions that minimize impact in terms of security. If a version is highlighted in bold, it indicates a change from the current version." >> api_report.md
           echo "" >> api_report.md
           echo "| Library | Current (requirements.txt) | Suggested (Depex) |" >> api_report.md
           echo "| :-- | :-- | :-- |" >> api_report.md
