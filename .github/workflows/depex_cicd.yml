@@ -27,10 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run tests
-        run: |
-          pytest tests/ --cov=app --cov-report=term-missing
-
       - name: Run tests with Coverage
         run: |
           pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
@@ -57,24 +53,24 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Check API and Generate Report
-        id: api_check
+      - name: Generate access token for Depex API
+        id: get_token
         env:
           LOGIN_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/auth/login
           LOGIN_EMAIL: ${{ secrets.DEPEX_EMAIL }}
           LOGIN_PASSWORD: ${{ secrets.DEPEX_PASSWORD }}
         run: |
+          AUTH_PAYLOAD=$(jq -n \
+            --arg email "$LOGIN_EMAIL" \
+            --arg password "$LOGIN_PASSWORD" \
+            '{email: $email, password: $password}')
+
           response=$(curl -s -w "\n%{http_code}" -X POST "$LOGIN_URL" \
             -H "Content-Type: application/json" \
-            -d "{\"email\":\"$LOGIN_EMAIL\", \"password\":\"$LOGIN_PASSWORD\"}")
-
-          echo "Full response: $response"
-
+            -d "$AUTH_PAYLOAD")
+            
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
-          
-          echo "HTTP Code: $http_code"
-          echo "Response Body: $body"
 
           TOKEN=$(echo "$body" | jq -r '.access_token')
           USER_ID=$(echo "$body" | jq -r '.user_id')
@@ -93,7 +89,11 @@ jobs:
         env:
           FILE_CHECK_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/valid_file
         run: |
-          FILE_CHECK_BODY="{\"requirement_file_id\":\"4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527\", \"max_level\":2, \"node_type\":\"PyPIPackage\"}"
+          FILE_CHECK_BODY=$(jq -n \
+            --arg id "4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527" \
+            --argjson max_level 2 \
+            --arg node_type "PyPIPackage" \
+            '{requirement_file_id: $id, max_level: $max_level, node_type: $node_type}')
 
           response=$(curl -s -w "\n%{http_code}" -X POST "$FILE_CHECK_URL" \
             -H "Content-Type: application/json" \
@@ -122,7 +122,13 @@ jobs:
         env:
           IMPACT_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/minimize_impact
         run: |
-          IMPACT_BODY="{\"requirement_file_id\":\"4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527\", \"limit\":1, \"max_level\":2, \"node_type\":\"PyPIPackage\", \"agregator\":\"mean\"}"
+          IMPACT_BODY=$(jq -n \
+            --arg id "4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527" \
+            --argjson limit 1 \
+            --argjson max_level 2 \
+            --arg node_type "PyPIPackage" \
+            --arg agregator "mean" \
+            '{requirement_file_id: $id, limit: $limit, max_level: $max_level, node_type: $node_type, agregator: $agregator}')
 
           response=$(curl -s -w "\n%{http_code}" -X POST "$IMPACT_URL" \
             -H "Content-Type: application/json" \
@@ -132,7 +138,6 @@ jobs:
           code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
 
-          echo "Impact Response Body: $body"
           echo "$body" > impact_body.json
 
           if [ "$code" == "200" ] || [ "$code" == "201" ]; then
@@ -217,9 +222,6 @@ jobs:
             fi
           done < requirements.txt 
 
-          echo "Generated requirements.depex.new:"
-          cat requirements.depex.new
-
           if cmp -s requirements.txt requirements.depex.new; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
@@ -228,7 +230,6 @@ jobs:
             cp requirements.depex.new requirements.txt
 
             git add requirements.txt
-
           fi
 
       - name: Create token
@@ -239,7 +240,6 @@ jobs:
           private-key: ${{ secrets.PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: tsis-depex-test-project
-
 
       - name: Create Depex PR with updated requirements
         if: steps.depex_patch.outputs.has_changes == 'true'
@@ -257,12 +257,20 @@ jobs:
           
           git push origin depex/deps-update-${{ github.run_id }}
 
+          PR_PAYLOAD=$(jq -n \
+            --arg title "chore(deps): Depex suggested versions" \
+            --arg head "depex/deps-update-${{ github.run_id }}" \
+            --arg base "${{ github.event.pull_request.base.ref }}" \
+            --arg body "This PR contains dependency updates suggested by Depex to minimize security impact." \
+            --argjson labels '["dependencies","depex"]' \
+            '{title: $title, head: $head, base: $base, body: $body, labels: $labels}')
+
           curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
             -H "Authorization: token $GH_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"title\":\"chore(deps): Depex suggested versions\",\"head\":\"depex/deps-update-${{ github.run_id }}\",\"base\":\"${{ github.event.pull_request.base.ref }}\",\"body\":\"This PR contains dependency updates suggested by Depex to minimize security impact.\",\"labels\":[\"dependencies\",\"depex\"]}"
+            -d "$PR_PAYLOAD"
 
-      - name: Post API Comment
+      - name: Post Comment
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: api-check-report 
