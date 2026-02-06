@@ -161,70 +161,70 @@ jobs:
           echo "| :--- | :--- | :--- |" >> api_report.md
           echo "| **1. File Validity** | $icon **$msg** | \`$code\` |" >> api_report.md
           
-      # - name: Minimize Impact Report
-      #   if: env.ACCESS_TOKEN != ''
-      #   env:
-      #     IMPACT_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/minimize_impact
-      #   run: |
-      #     IMPACT_BODY=$(jq -n \
-      #       --arg id "4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527" \
-      #       --argjson limit 1 \
-      #       --argjson max_level 2 \
-      #       --arg node_type "PyPIPackage" \
-      #       --arg agregator "mean" \
-      #       '{requirement_file_id: $id, limit: $limit, max_level: $max_level, node_type: $node_type, agregator: $agregator}')
+      - name: Minimize Impact Report
+        id: minimize_impact_report
+        env:
+          IMPACT_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/smt/minimize_impact
+        run: |
+          IMPACT_BODY=$(jq -n \
+            --arg id "$REQ_FILE_ID" \
+            --argjson limit 1 \
+            --argjson max_depth 2 \
+            --arg node_type "PyPIPackage" \
+            --arg aggregator "mean" \
+            '{requirement_file_id: $id, limit: $limit, max_depth: $max_depth, node_type: $node_type, aggregator: $aggregator}')
 
-      #     response=$(curl -s -w "\n%{http_code}" -X POST "$IMPACT_URL" \
-      #       -H "Content-Type: application/json" \
-      #       -H "Authorization: Bearer $ACCESS_TOKEN" \
-      #       -d "$IMPACT_BODY")
+          response=$(curl -s -w "\n%{http_code}" -X POST "$IMPACT_URL" \
+            -H "Content-Type: application/json" \
+            -H "Cookie: access_token=$ACCESS_TOKEN" \
+            -d "$IMPACT_BODY")
 
-      #     code=$(echo "$response" | tail -n1)
-      #     body=$(echo "$response" | head -n -1)
+          code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
 
-      #     echo "$body" > impact_body.json
+          echo "$body" > impact_body.json
 
-      #     if [ "$code" == "200" ] || [ "$code" == "201" ]; then
-      #        icon="🟢"
-      #        msg="Impact Analyzed"
-      #     else
-      #        icon="🔴"
-      #        msg="Error"
-      #     fi
+          if [ "$code" == "200" ] || [ "$code" == "201" ]; then
+             icon="🟢"
+             msg="Impact Analyzed"
+          else
+             icon="🔴"
+             msg="Error"
+          fi
 
-      #     echo "| **2. Minimize Impact** | $icon **$msg** | \`$code\` |" >> api_report.md
-      #     echo "" >> api_report.md
+          echo "| **2. Minimize Impact** | $icon **$msg** | \`$code\` |" >> api_report.md
+          echo "" >> api_report.md
 
-      # - name: Build dependency update comment
-      #   if: env.ACCESS_TOKEN != ''
-      #   run: |
-      #     if [ ! -f impact_body.json ]; then
-      #       echo "No impact_body.json to parse"; exit 0
-      #     fi
+      - name: Build dependency update comment
+        id: build_comment
+        run: |
+          if [ ! -f impact_body.json ]; then
+            echo "No impact_body.json to parse"; exit 0
+          fi
 
-      #     jq '.result[0]' impact_body.json > impact_obj.json
+          jq '.data[0]' impact_body.json > impact_obj.json
 
-      #     echo "## Suggested Dependency Updates" >> api_report.md
-      #     echo "The following table lists the current dependencies from \`requirements.txt\` alongside the suggested versions that minimize impact in terms of security. If a version is highlighted in bold, it indicates a change from the current version." >> api_report.md
-      #     echo "" >> api_report.md
-      #     echo "| Library | Current (requirements.txt) | Suggested (Depex) |" >> api_report.md
-      #     echo "| :-- | :-- | :-- |" >> api_report.md
+          echo "## Suggested Dependency Updates" >> api_report.md
+          echo "The following table lists the current dependencies from \`requirements.txt\` alongside the suggested versions that minimize impact in terms of security. If a version is highlighted in bold, it indicates a change from the current version." >> api_report.md
+          echo "" >> api_report.md
+          echo "| Library | Current (requirements.txt) | Suggested (Depex) |" >> api_report.md
+          echo "| :-- | :-- | :-- |" >> api_report.md
 
-      #     awk -F'==' 'NF==2 {print tolower($1) "=" $2}' requirements.txt > req_map.txt
+          sed -E 's/([<>!=~]=?)/=/' requirements.txt | awk -F'=' 'NF==2 {print tolower($1) "=" $2}' > req_map.txt
 
-      #     while IFS='=' read -r name req_ver; do
-      #       imp_ver=$(jq -r --arg k "$name" '.[$k] // empty' impact_obj.json)
-      #       if [ -n "$imp_ver" ]; then
-      #         if [ "$imp_ver" != "$req_ver" ]; then
-      #           lib="**$name**"
-      #           sug="**\`$imp_ver\`**"
-      #         else
-      #           lib="$name"
-      #           sug="\`$imp_ver\`"
-      #         fi
-      #         echo "| $lib | \`$req_ver\` | $sug |" >> api_report.md
-      #       fi
-      #     done < req_map.txt
+          while IFS='=' read -r name req_ver; do
+            imp_ver=$(jq -r --arg k "$name" '.[$k] // empty' impact_obj.json)
+            if [ -n "$imp_ver" ]; then
+              if [ "$imp_ver" != "$req_ver" ]; then
+                lib="**$name**"
+                sug="**\`$imp_ver\`**"
+              else
+                lib="$name"
+                sug="\`$imp_ver\`"
+              fi
+              echo "| $lib | \`$req_ver\` | $sug |" >> api_report.md
+            fi
+          done < req_map.txt
 
       # - name: Build updated requirements from Depex suggestions
       #   id: depex_patch
@@ -233,7 +233,7 @@ jobs:
       #     if [ ! -f impact_body.json ]; then
       #       echo "No impact_body.json to parse"; exit 0
       #     fi
-      #     jq '.result[0]' impact_body.json > impact_obj.json
+      #     jq '.data[0]' impact_body.json > impact_obj.json
 
       #     : > requirements.depex.new
       #     while IFS= read -r line; do
