@@ -43,9 +43,9 @@ jobs:
   #         create-new-comment: false
 
   depex-post:
-    needs: pr-ci
+    # needs: pr-ci
     runs-on: ubuntu-latest
-    # if: ${{ github.event_name == 'pull_request' && !startsWith(github.event.pull_request.head.ref, 'depex/') && github.actor != 'github-actions[bot]' }}
+    if: ${{ github.event_name == 'pull_request' && !startsWith(github.event.pull_request.head.ref, 'depex/') && github.actor != 'github-actions[bot]' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
