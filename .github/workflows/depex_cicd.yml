@@ -123,45 +123,43 @@ jobs:
             echo "Error: Could not find ID for requirements.txt in this repo!"
             exit 1
           fi
-
-          echo "Found ID: $FILE_ID"
           
           echo "REQ_FILE_ID=$FILE_ID" >> $GITHUB_ENV
-          
 
-      # - name: Check file validity
-      #   id: file_check
-      #   env:
-      #     ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-      #     FILE_CHECK_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/valid_file
-      #   run: |
-      #     FILE_CHECK_BODY=$(jq -n \
-      #       --arg id "4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527" \
-      #       --argjson max_level 2 \
-      #       --arg node_type "PyPIPackage" \
-      #       '{requirement_file_id: $id, max_level: $max_level, node_type: $node_type}')
+      - name: Check file validity
+        id: file_check
+        env:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          FILE_CHECK_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/smt/valid_graph
+        run: |
+          FILE_CHECK_BODY=$(jq -n \
+            --arg id "$REQ_FILE_ID" \
+            --argjson max_depth 2 \
+            --arg node_type "PyPIPackage" \
+            '{requirement_file_id: $id, max_depth: $max_depth, node_type: $node_type}')
 
-      #     response=$(curl -s -w "\n%{http_code}" -X POST "$FILE_CHECK_URL" \
-      #       -H "Content-Type: application/json" \
-      #       -H "Cookie: access_token=$ACCESS_TOKEN" \
-      #       -d "$FILE_CHECK_BODY")
+          response=$(curl -s -w "\n%{http_code}" -X POST "$FILE_CHECK_URL" \
+            -H "Content-Type: application/json" \
+            -H "Cookie: access_token=$ACCESS_TOKEN" \
+            -d "$FILE_CHECK_BODY")
 
-      #     code=$(echo "$response" | tail -n1)
-      #     body=$(echo "$response" | head -n -1)
+          code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
+          data=$(echo "$body" | jq -r '.data')
 
-      #     if [ "$code" == "200" ] || [ "$code" == "201" ]; then
-      #        icon="🟢"
-      #        msg="Valid File"
-      #     else
-      #        icon="🔴"
-      #        msg="Error"
-      #     fi
+          if [ "$data" == "true" ]; then
+            icon="🟢"
+            msg="Valid File"
+          else
+            icon="🔴"
+            msg="Error"
+          fi
 
-      #     echo "## Validity" > api_report.md
-      #     echo "" >> api_report.md
-      #     echo "| Check | Status | HTTP Code |" >> api_report.md
-      #     echo "| :--- | :--- | :--- |" >> api_report.md
-      #     echo "| **1. File Validity** | $icon **$msg** | \`$code\` |" >> api_report.md
+          echo "## Validity" > api_report.md
+          echo "" >> api_report.md
+          echo "| Check | Status | HTTP Code |" >> api_report.md
+          echo "| :--- | :--- | :--- |" >> api_report.md
+          echo "| **1. File Validity** | $icon **$msg** | \`$code\` |" >> api_report.md
           
       # - name: Minimize Impact Report
       #   if: env.ACCESS_TOKEN != ''
