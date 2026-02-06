@@ -65,9 +65,11 @@ jobs:
             --arg password "$LOGIN_PASSWORD" \
             '{email: $email, password: $password}')
 
-          response=$(curl -s -w "\n%{http_code}" -X POST "$LOGIN_URL" \
+          response=$(curl -s -c cookies.txt -w "\n%{http_code}" -X POST "$LOGIN_URL" \
             -H "Content-Type: application/json" \
             -d "$AUTH_PAYLOAD")
+
+          cat cookies.txt
             
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
@@ -75,16 +77,16 @@ jobs:
           echo "Login HTTP Code: $http_code"
           echo "Login Response Body: $body"
 
-          TOKEN=$(echo "$body" | jq -r '.access_token')
-          USER_ID=$(echo "$body" | jq -r '.user_id')
+          # TOKEN=$(echo "$body" | jq -r '.access_token')
+          # USER_ID=$(echo "$body" | jq -r '.user_id')
 
-          if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
-            echo "Error: Could not extract access token"
-            exit 1
-          fi
+          # if [ "$TOKEN" == "null" ] || [ -z "$TOKEN" ]; then
+          #   echo "Error: Could not extract access token"
+          #   exit 1
+          # fi
 
-          echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
-          echo "USER_ID=$USER_ID" >> $GITHUB_ENV
+          # echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
+          # echo "USER_ID=$USER_ID" >> $GITHUB_ENV
 
       # - name: Check file validity
       #   id: file_check
