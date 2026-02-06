@@ -11,36 +11,36 @@ permissions:
   checks: write
 
 jobs:
-  pr-ci:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+  # pr-ci:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.11'
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+  #     - name: Install dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install -r requirements.txt
 
-      - name: Run tests with Coverage
-        run: |
-          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
+  #     - name: Run tests with Coverage
+  #       run: |
+  #         pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
 
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./pytest.xml
-          title: "🧪 Depex Test Report"
-          badge-title: "Coverage"
-          hide-badge: false
-          hide-report: false
-          create-new-comment: false
+  #     - name: Pytest coverage comment
+  #       uses: MishaKav/pytest-coverage-comment@main
+  #       with:
+  #         pytest-coverage-path: ./pytest-coverage.txt
+  #         junitxml-path: ./pytest.xml
+  #         title: "🧪 Depex Test Report"
+  #         badge-title: "Coverage"
+  #         hide-badge: false
+  #         hide-report: false
+  #         create-new-comment: false
 
   depex-post:
     needs: pr-ci
@@ -69,13 +69,15 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$AUTH_PAYLOAD")
 
-          cat cookies.txt
+          TOKEN=$(grep "access_token" cookies.txt | awk '{print $NF}')
+          echo "Extracted Token: $TOKEN"
+          echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
             
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n -1)
+          # http_code=$(echo "$response" | tail -n1)
+          # body=$(echo "$response" | head -n -1)
 
-          echo "Login HTTP Code: $http_code"
-          echo "Login Response Body: $body"
+          # echo "Login HTTP Code: $http_code"
+          # echo "Login Response Body: $body"
 
           # TOKEN=$(echo "$body" | jq -r '.access_token')
           # USER_ID=$(echo "$body" | jq -r '.user_id')
@@ -88,9 +90,28 @@ jobs:
           # echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
           # echo "USER_ID=$USER_ID" >> $GITHUB_ENV
 
+      - name: Init repository
+        id: repo_init
+        if: env.ACCESS_TOKEN != ''
+        env: 
+          REPO_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/graph/repository/init
+        run: |
+          REPO_PAYLOAD=$(jq -n \
+            --arg owner "${{ github.repository_owner }}" \
+            --arg name "${{ github.repository }}" \
+            '{owner: $owner, name: $name}')
+
+          response=$(curl -s -w "\n%{http_code}" -X POST "$REPO_URL" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -d "$REPO_PAYLOAD")
+
+          echo "Repository Init Response: $response"
+
+
       # - name: Check file validity
       #   id: file_check
-      #   if: env.ACCESS_TOKEN != ''
+      #   if: cookies.txt && grep -q "access_token" cookies.txt
       #   env:
       #     FILE_CHECK_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/valid_file
       #   run: |
