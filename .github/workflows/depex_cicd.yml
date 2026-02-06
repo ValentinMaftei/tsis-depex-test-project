@@ -83,7 +83,7 @@ jobs:
         run: |
           REPO_PAYLOAD=$(jq -n \
             --arg owner "${{ github.repository_owner }}" \
-            --arg name "${{ github.repository }}" \
+            --arg name "${{ github.event.repository.name }}" \
             '{owner: $owner, name: $name}')
 
           response=$(curl -s -w "\n%{http_code}" -X POST "$REPO_URL" \
