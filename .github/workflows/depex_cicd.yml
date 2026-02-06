@@ -95,16 +95,44 @@ jobs:
 
           http_code=$(echo "$response" | tail -n1)
 
-          if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
+          if [ "$http_code" == "401" ] || [ "$http_code" == "500" ] || [ "$http_code" == "404" ]; then
             echo "Error: Repository initialization failed with status code $http_code"
             exit 1
           fi
 
+      - name: Get graph repository
+        id: get_repo
+        env:
+          REPO_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/graph/repositories
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X GET "$REPO_URL" \
+            -H "Cookie: access_token=$ACCESS_TOKEN" \
+            -H "Content-Type: application/json")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
+
+          FILE_ID=$(echo "$body" | jq -r \
+            --arg owner "${{ github.repository_owner }}" \
+            --arg name "${{ github.event.repository.name }}" \
+            --arg fname "requirements.txt" \
+            '.data[] | select(.owner == $owner and .name == $name).requirement_files[] | select(.name == $fname).requirement_file_id')
+
+          if [ -z "$FILE_ID" ]; then
+            echo "Error: Could not find ID for requirements.txt in this repo!"
+            exit 1
+          fi
+
+          echo "Found ID: $FILE_ID"
+          
+          echo "REQ_FILE_ID=$FILE_ID" >> $GITHUB_ENV
+          
 
       # - name: Check file validity
       #   id: file_check
-      #   if: cookies.txt && grep -q "access_token" cookies.txt
       #   env:
+      #     ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       #     FILE_CHECK_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/valid_file
       #   run: |
       #     FILE_CHECK_BODY=$(jq -n \
@@ -115,7 +143,7 @@ jobs:
 
       #     response=$(curl -s -w "\n%{http_code}" -X POST "$FILE_CHECK_URL" \
       #       -H "Content-Type: application/json" \
-      #       -H "Authorization: Bearer $ACCESS_TOKEN" \
+      #       -H "Cookie: access_token=$ACCESS_TOKEN" \
       #       -d "$FILE_CHECK_BODY")
 
       #     code=$(echo "$response" | tail -n1)
