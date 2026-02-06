@@ -202,10 +202,7 @@ jobs:
             echo "No impact_body.json to parse"; exit 0
           fi
 
-          echo "Full Depex Response:"
-          cat impact_body.json
-
-          jq '.data[0]' impact_body.json > impact_obj.json
+          jq '.data[0] | with_entries(.key |= sub("^pkg:pypi/"; ""))' impact_body.json > impact_obj.json
 
           echo "## Suggested Dependency Updates" >> api_report.md
           echo "The following table lists the current dependencies from \`requirements.txt\` alongside the suggested versions that minimize impact in terms of security. If a version is highlighted in bold, it indicates a change from the current version." >> api_report.md
