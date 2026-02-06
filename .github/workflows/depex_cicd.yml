@@ -56,7 +56,7 @@ jobs:
       - name: Generate access token for Depex API
         id: get_token
         env:
-          LOGIN_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/auth/login
+          LOGIN_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/user/login
           LOGIN_EMAIL: ${{ secrets.DEPEX_EMAIL }}
           LOGIN_PASSWORD: ${{ secrets.DEPEX_PASSWORD }}
         run: |
@@ -72,6 +72,9 @@ jobs:
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n -1)
 
+          echo "Login HTTP Code: $http_code"
+          echo "Login Response Body: $body"
+
           TOKEN=$(echo "$body" | jq -r '.access_token')
           USER_ID=$(echo "$body" | jq -r '.user_id')
 
@@ -83,194 +86,194 @@ jobs:
           echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
           echo "USER_ID=$USER_ID" >> $GITHUB_ENV
 
-      - name: Check file validity
-        id: file_check
-        if: env.ACCESS_TOKEN != ''
-        env:
-          FILE_CHECK_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/valid_file
-        run: |
-          FILE_CHECK_BODY=$(jq -n \
-            --arg id "4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527" \
-            --argjson max_level 2 \
-            --arg node_type "PyPIPackage" \
-            '{requirement_file_id: $id, max_level: $max_level, node_type: $node_type}')
+      # - name: Check file validity
+      #   id: file_check
+      #   if: env.ACCESS_TOKEN != ''
+      #   env:
+      #     FILE_CHECK_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/valid_file
+      #   run: |
+      #     FILE_CHECK_BODY=$(jq -n \
+      #       --arg id "4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527" \
+      #       --argjson max_level 2 \
+      #       --arg node_type "PyPIPackage" \
+      #       '{requirement_file_id: $id, max_level: $max_level, node_type: $node_type}')
 
-          response=$(curl -s -w "\n%{http_code}" -X POST "$FILE_CHECK_URL" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $ACCESS_TOKEN" \
-            -d "$FILE_CHECK_BODY")
+      #     response=$(curl -s -w "\n%{http_code}" -X POST "$FILE_CHECK_URL" \
+      #       -H "Content-Type: application/json" \
+      #       -H "Authorization: Bearer $ACCESS_TOKEN" \
+      #       -d "$FILE_CHECK_BODY")
 
-          code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n -1)
+      #     code=$(echo "$response" | tail -n1)
+      #     body=$(echo "$response" | head -n -1)
 
-          if [ "$code" == "200" ] || [ "$code" == "201" ]; then
-             icon="🟢"
-             msg="Valid File"
-          else
-             icon="🔴"
-             msg="Error"
-          fi
+      #     if [ "$code" == "200" ] || [ "$code" == "201" ]; then
+      #        icon="🟢"
+      #        msg="Valid File"
+      #     else
+      #        icon="🔴"
+      #        msg="Error"
+      #     fi
 
-          echo "## Validity" > api_report.md
-          echo "" >> api_report.md
-          echo "| Check | Status | HTTP Code |" >> api_report.md
-          echo "| :--- | :--- | :--- |" >> api_report.md
-          echo "| **1. File Validity** | $icon **$msg** | \`$code\` |" >> api_report.md
+      #     echo "## Validity" > api_report.md
+      #     echo "" >> api_report.md
+      #     echo "| Check | Status | HTTP Code |" >> api_report.md
+      #     echo "| :--- | :--- | :--- |" >> api_report.md
+      #     echo "| **1. File Validity** | $icon **$msg** | \`$code\` |" >> api_report.md
           
-      - name: Minimize Impact Report
-        if: env.ACCESS_TOKEN != ''
-        env:
-          IMPACT_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/minimize_impact
-        run: |
-          IMPACT_BODY=$(jq -n \
-            --arg id "4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527" \
-            --argjson limit 1 \
-            --argjson max_level 2 \
-            --arg node_type "PyPIPackage" \
-            --arg agregator "mean" \
-            '{requirement_file_id: $id, limit: $limit, max_level: $max_level, node_type: $node_type, agregator: $agregator}')
+      # - name: Minimize Impact Report
+      #   if: env.ACCESS_TOKEN != ''
+      #   env:
+      #     IMPACT_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/file/minimize_impact
+      #   run: |
+      #     IMPACT_BODY=$(jq -n \
+      #       --arg id "4:abb5c34b-b162-429b-8e37-14c18b6be2a2:65388527" \
+      #       --argjson limit 1 \
+      #       --argjson max_level 2 \
+      #       --arg node_type "PyPIPackage" \
+      #       --arg agregator "mean" \
+      #       '{requirement_file_id: $id, limit: $limit, max_level: $max_level, node_type: $node_type, agregator: $agregator}')
 
-          response=$(curl -s -w "\n%{http_code}" -X POST "$IMPACT_URL" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $ACCESS_TOKEN" \
-            -d "$IMPACT_BODY")
+      #     response=$(curl -s -w "\n%{http_code}" -X POST "$IMPACT_URL" \
+      #       -H "Content-Type: application/json" \
+      #       -H "Authorization: Bearer $ACCESS_TOKEN" \
+      #       -d "$IMPACT_BODY")
 
-          code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n -1)
+      #     code=$(echo "$response" | tail -n1)
+      #     body=$(echo "$response" | head -n -1)
 
-          echo "$body" > impact_body.json
+      #     echo "$body" > impact_body.json
 
-          if [ "$code" == "200" ] || [ "$code" == "201" ]; then
-             icon="🟢"
-             msg="Impact Analyzed"
-          else
-             icon="🔴"
-             msg="Error"
-          fi
+      #     if [ "$code" == "200" ] || [ "$code" == "201" ]; then
+      #        icon="🟢"
+      #        msg="Impact Analyzed"
+      #     else
+      #        icon="🔴"
+      #        msg="Error"
+      #     fi
 
-          echo "| **2. Minimize Impact** | $icon **$msg** | \`$code\` |" >> api_report.md
-          echo "" >> api_report.md
+      #     echo "| **2. Minimize Impact** | $icon **$msg** | \`$code\` |" >> api_report.md
+      #     echo "" >> api_report.md
 
-      - name: Build dependency update comment
-        if: env.ACCESS_TOKEN != ''
-        run: |
-          if [ ! -f impact_body.json ]; then
-            echo "No impact_body.json to parse"; exit 0
-          fi
+      # - name: Build dependency update comment
+      #   if: env.ACCESS_TOKEN != ''
+      #   run: |
+      #     if [ ! -f impact_body.json ]; then
+      #       echo "No impact_body.json to parse"; exit 0
+      #     fi
 
-          jq '.result[0]' impact_body.json > impact_obj.json
+      #     jq '.result[0]' impact_body.json > impact_obj.json
 
-          echo "## Suggested Dependency Updates" >> api_report.md
-          echo "The following table lists the current dependencies from \`requirements.txt\` alongside the suggested versions that minimize impact in terms of security. If a version is highlighted in bold, it indicates a change from the current version." >> api_report.md
-          echo "" >> api_report.md
-          echo "| Library | Current (requirements.txt) | Suggested (Depex) |" >> api_report.md
-          echo "| :-- | :-- | :-- |" >> api_report.md
+      #     echo "## Suggested Dependency Updates" >> api_report.md
+      #     echo "The following table lists the current dependencies from \`requirements.txt\` alongside the suggested versions that minimize impact in terms of security. If a version is highlighted in bold, it indicates a change from the current version." >> api_report.md
+      #     echo "" >> api_report.md
+      #     echo "| Library | Current (requirements.txt) | Suggested (Depex) |" >> api_report.md
+      #     echo "| :-- | :-- | :-- |" >> api_report.md
 
-          awk -F'==' 'NF==2 {print tolower($1) "=" $2}' requirements.txt > req_map.txt
+      #     awk -F'==' 'NF==2 {print tolower($1) "=" $2}' requirements.txt > req_map.txt
 
-          while IFS='=' read -r name req_ver; do
-            imp_ver=$(jq -r --arg k "$name" '.[$k] // empty' impact_obj.json)
-            if [ -n "$imp_ver" ]; then
-              if [ "$imp_ver" != "$req_ver" ]; then
-                lib="**$name**"
-                sug="**\`$imp_ver\`**"
-              else
-                lib="$name"
-                sug="\`$imp_ver\`"
-              fi
-              echo "| $lib | \`$req_ver\` | $sug |" >> api_report.md
-            fi
-          done < req_map.txt
+      #     while IFS='=' read -r name req_ver; do
+      #       imp_ver=$(jq -r --arg k "$name" '.[$k] // empty' impact_obj.json)
+      #       if [ -n "$imp_ver" ]; then
+      #         if [ "$imp_ver" != "$req_ver" ]; then
+      #           lib="**$name**"
+      #           sug="**\`$imp_ver\`**"
+      #         else
+      #           lib="$name"
+      #           sug="\`$imp_ver\`"
+      #         fi
+      #         echo "| $lib | \`$req_ver\` | $sug |" >> api_report.md
+      #       fi
+      #     done < req_map.txt
 
-      - name: Build updated requirements from Depex suggestions
-        id: depex_patch
-        if: env.ACCESS_TOKEN != ''
-        run: |
-          if [ ! -f impact_body.json ]; then
-            echo "No impact_body.json to parse"; exit 0
-          fi
-          jq '.result[0]' impact_body.json > impact_obj.json
+      # - name: Build updated requirements from Depex suggestions
+      #   id: depex_patch
+      #   if: env.ACCESS_TOKEN != ''
+      #   run: |
+      #     if [ ! -f impact_body.json ]; then
+      #       echo "No impact_body.json to parse"; exit 0
+      #     fi
+      #     jq '.result[0]' impact_body.json > impact_obj.json
 
-          : > requirements.depex.new
-          while IFS= read -r line; do
-            if [[ "$line" =~ ^[[:space:]]*$ ]] || [[ "$line" =~ ^[[:space:]]*# ]]; then
-              echo "$line" >> requirements.depex.new
-              continue
-            fi
+      #     : > requirements.depex.new
+      #     while IFS= read -r line; do
+      #       if [[ "$line" =~ ^[[:space:]]*$ ]] || [[ "$line" =~ ^[[:space:]]*# ]]; then
+      #         echo "$line" >> requirements.depex.new
+      #         continue
+      #       fi
 
-            if [[ "$line" =~ ^([^=[:space:]]+)==([^\r[:space:]]+)$ ]]; then
-              orig_name="${BASH_REMATCH[1]}"
-              req_ver="${BASH_REMATCH[2]}"
-              name_lower=$(echo "$orig_name" | tr '[:upper:]' '[:lower:]')
+      #       if [[ "$line" =~ ^([^=[:space:]]+)==([^\r[:space:]]+)$ ]]; then
+      #         orig_name="${BASH_REMATCH[1]}"
+      #         req_ver="${BASH_REMATCH[2]}"
+      #         name_lower=$(echo "$orig_name" | tr '[:upper:]' '[:lower:]')
              
-              imp_ver=$(jq -r --arg k "$name_lower" '.[$k] // empty' impact_obj.json)
+      #         imp_ver=$(jq -r --arg k "$name_lower" '.[$k] // empty' impact_obj.json)
 
-              final_ver="$req_ver"
+      #         final_ver="$req_ver"
 
-              if [ -n "$imp_ver" ]; then
-                max_ver=$(printf "%s\n%s" "$req_ver" "$imp_ver" | sort -V | tail -n 1)
+      #         if [ -n "$imp_ver" ]; then
+      #           max_ver=$(printf "%s\n%s" "$req_ver" "$imp_ver" | sort -V | tail -n 1)
                 
-                if [ "$max_ver" == "$imp_ver" ] && [ "$imp_ver" != "$req_ver" ]; then
-                   final_ver="$imp_ver"
-                   echo "Upgrading $orig_name: $req_ver -> $final_ver"
-                fi
-              fi
+      #           if [ "$max_ver" == "$imp_ver" ] && [ "$imp_ver" != "$req_ver" ]; then
+      #              final_ver="$imp_ver"
+      #              echo "Upgrading $orig_name: $req_ver -> $final_ver"
+      #           fi
+      #         fi
              
-              echo "${orig_name}==${final_ver}" >> requirements.depex.new
-            else
-              echo "$line" >> requirements.depex.new
-            fi
-          done < requirements.txt 
+      #         echo "${orig_name}==${final_ver}" >> requirements.depex.new
+      #       else
+      #         echo "$line" >> requirements.depex.new
+      #       fi
+      #     done < requirements.txt 
 
-          if cmp -s requirements.txt requirements.depex.new; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+      #     if cmp -s requirements.txt requirements.depex.new; then
+      #       echo "has_changes=false" >> $GITHUB_OUTPUT
+      #     else
+      #       echo "has_changes=true" >> $GITHUB_OUTPUT
 
-            cp requirements.depex.new requirements.txt
+      #       cp requirements.depex.new requirements.txt
 
-            git add requirements.txt
-          fi
+      #       git add requirements.txt
+      #     fi
 
-      - name: Create token
-        id: gha_token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: tsis-depex-test-project
+      # - name: Create token
+      #   id: gha_token
+      #   uses: actions/create-github-app-token@v2
+      #   with:
+      #     app-id: ${{ secrets.APP_ID }}
+      #     private-key: ${{ secrets.PRIVATE_KEY }}
+      #     owner: ${{ github.repository_owner }}
+      #     repositories: tsis-depex-test-project
 
-      - name: Create Depex PR with updated requirements
-        if: steps.depex_patch.outputs.has_changes == 'true'
-        env:
-          GH_TOKEN: ${{ steps.gha_token.outputs.token }}
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      # - name: Create Depex PR with updated requirements
+      #   if: steps.depex_patch.outputs.has_changes == 'true'
+      #   env:
+      #     GH_TOKEN: ${{ steps.gha_token.outputs.token }}
+      #   run: |
+      #     git config --global user.name "github-actions[bot]"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          git checkout -b depex/deps-update-${{ github.run_id }}
+      #     git checkout -b depex/deps-update-${{ github.run_id }}
 
-          git add requirements.txt
+      #     git add requirements.txt
 
-          git commit -m "chore(deps): Depex suggested versions"
+      #     git commit -m "chore(deps): Depex suggested versions"
           
-          git push origin depex/deps-update-${{ github.run_id }}
+      #     git push origin depex/deps-update-${{ github.run_id }}
 
-          PR_PAYLOAD=$(jq -n \
-            --arg title "chore(deps): Depex suggested versions" \
-            --arg head "depex/deps-update-${{ github.run_id }}" \
-            --arg base "${{ github.event.pull_request.base.ref }}" \
-            --arg body "This PR contains dependency updates suggested by Depex to minimize security impact." \
-            --argjson labels '["dependencies","depex"]' \
-            '{title: $title, head: $head, base: $base, body: $body, labels: $labels}')
+      #     PR_PAYLOAD=$(jq -n \
+      #       --arg title "chore(deps): Depex suggested versions" \
+      #       --arg head "depex/deps-update-${{ github.run_id }}" \
+      #       --arg base "${{ github.event.pull_request.base.ref }}" \
+      #       --arg body "This PR contains dependency updates suggested by Depex to minimize security impact." \
+      #       --argjson labels '["dependencies","depex"]' \
+      #       '{title: $title, head: $head, base: $base, body: $body, labels: $labels}')
 
-          curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "$PR_PAYLOAD"
+      #     curl -X POST "https://api.github.com/repos/${{ github.repository }}/pulls" \
+      #       -H "Authorization: token $GH_TOKEN" \
+      #       -H "Content-Type: application/json" \
+      #       -d "$PR_PAYLOAD"
 
-      - name: Post Comment
+      # - name: Post Comment
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: api-check-report 
