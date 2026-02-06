@@ -102,8 +102,9 @@ jobs:
             '{owner: $owner, name: $name}')
 
           response=$(curl -s -w "\n%{http_code}" -X POST "$REPO_URL" \
-            -H "Content-Type: application/json" \
+            -H "accept: application/json" \
             -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
             -d "$REPO_PAYLOAD")
 
           echo "Repository Init Response: $response"
