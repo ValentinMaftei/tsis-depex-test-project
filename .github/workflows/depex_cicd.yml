@@ -164,6 +164,7 @@ jobs:
       - name: Minimize Impact Report
         id: minimize_impact_report
         env:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           IMPACT_URL: https://tasimetric-willard-noncosmic.ngrok-free.dev/operation/smt/minimize_impact
         run: |
           IMPACT_BODY=$(jq -n \
