@@ -247,29 +247,27 @@ jobs:
               continue
             fi
 
-            if [[ "$line" =~ ^([^=[:space:]]+)==([^\r[:space:]]+)$ ]]; then
+            if [[ "$line" =~ ^([^=<>!~[:space:]]+)([<>!=~]=?)([^\r[:space:]]+)$ ]]; then
               orig_name="${BASH_REMATCH[1]}"
-              req_ver="${BASH_REMATCH[2]}"
+              operator="${BASH_REMATCH[2]}"
+              req_ver="${BASH_REMATCH[3]}"
+
               name_lower=$(echo "$orig_name" | tr '[:upper:]' '[:lower:]')
              
               imp_ver=$(jq -r --arg k "$name_lower" '.[$k] // empty' impact_obj.json)
 
               final_ver="$req_ver"
 
-              if [ -n "$imp_ver" ]; then
-                max_ver=$(printf "%s\n%s" "$req_ver" "$imp_ver" | sort -V | tail -n 1)
-                
-                if [ "$max_ver" == "$imp_ver" ] && [ "$imp_ver" != "$req_ver" ]; then
-                   final_ver="$imp_ver"
-                   echo "Upgrading $orig_name: $req_ver -> $final_ver"
-                fi
+              if [ -n "$imp_ver" ] && [ "$imp_ver" != "$req_ver" ]; then
+                 final_ver="$imp_ver"
+                 echo "Changing $orig_name: $req_ver -> $final_ver"
               fi
-             
-              echo "${orig_name}==${final_ver}" >> requirements.depex.new
+              
+              echo "${orig_name}${operator}${final_ver}" >> requirements.depex.new
             else
               echo "$line" >> requirements.depex.new
             fi
-          done < requirements.txt 
+          done < requirements.txt
 
           if cmp -s requirements.txt requirements.depex.new; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
