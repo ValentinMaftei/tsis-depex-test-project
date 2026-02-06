@@ -231,7 +231,6 @@ jobs:
 
       - name: Build updated requirements from Depex suggestions
         id: depex_patch
-        if: env.ACCESS_TOKEN != ''
         run: |
           if [ ! -f impact_body.json ]; then
             echo "No impact_body.json to parse"; exit 0
