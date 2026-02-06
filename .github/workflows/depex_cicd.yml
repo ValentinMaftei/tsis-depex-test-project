@@ -76,6 +76,11 @@ jobs:
 
           echo "Login HTTP Code: $http_code"
 
+          if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
+            echo "Error: Login failed with status code $http_code"
+            exit 1
+          fi
+
           TOKEN=$(grep "access_token" cookies.txt | awk '{print $NF}')
           echo "Extracted Token: $TOKEN"
           echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
