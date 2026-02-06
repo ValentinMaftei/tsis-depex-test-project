@@ -73,7 +73,6 @@ jobs:
           # echo "Extracted Token: $TOKEN"
           # echo "ACCESS_TOKEN=$TOKEN" >> $GITHUB_ENV
           
-
       - name: Init repository
         id: repo_init
         if: env.ACCESS_TOKEN != ''
@@ -215,6 +214,9 @@ jobs:
 
           while IFS='=' read -r name req_ver; do
             imp_ver=$(jq -r --arg k "$name" '.[$k] // empty' impact_obj.json)
+
+            echo "Processing $name: current version $req_ver, suggested version $imp_ver"
+
             if [ -n "$imp_ver" ]; then
               if [ "$imp_ver" != "$req_ver" ]; then
                 lib="**$name**"
