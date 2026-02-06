@@ -65,16 +65,11 @@ jobs:
             --arg password "$LOGIN_PASSWORD" \
             '{email: $email, password: $password}')
 
-          echo "Auth payload: $AUTH_PAYLOAD"
-
           response=$(curl -s -c cookies.txt -w "\n%{http_code}" -X POST "$LOGIN_URL" \
             -H "Content-Type: application/json" \
             -d "$AUTH_PAYLOAD")
 
-          echo "Login Response: $response"
           http_code=$(echo "$response" | tail -n1)
-
-          echo "Login HTTP Code: $http_code"
 
           if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
             echo "Error: Login failed with status code $http_code"
@@ -119,6 +114,13 @@ jobs:
             -d "$REPO_PAYLOAD")
 
           echo "Repository Init Response: $response"
+
+          http_code=$(echo "$response" | tail -n1)
+
+          if [ "$http_code" != "200" ] && [ "$http_code" != "201" ]; then
+            echo "Error: Repository initialization failed with status code $http_code"
+            exit 1
+          fi
 
 
       # - name: Check file validity
