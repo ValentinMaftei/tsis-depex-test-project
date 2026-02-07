@@ -9,6 +9,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 # In-memory storage for tasks (for demo purposes)
 tasks_db: dict[int, dict] = {}
 task_id_counter = 1
